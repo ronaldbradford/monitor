@@ -1,0 +1,4 @@
+/etc/apache2
+/etc/mysql
+/etc/memcached.conf
+/usr/local/bin/php.fcgi
