@@ -52,7 +52,7 @@ DEFAULT_LOG_DELETE_DAYS=30
 DEFAULT_LOCK_TIMEOUT=60
 
 DEFAULT_PRODUCT="mysql"
-DEFAULT_MYSQL_USER="aba"
+DEFAULT_MYSQL_USER="dba"
 
 #----------------------------------------------------------------cleanup_exit --
 # Exit the program, reporting exit code and clean up default tmp file
@@ -269,6 +269,10 @@ set_base_paths() {
 
   [ -z "${BASE_DIR}" ] && fatal "${FUNCTION} Unable to determine BASE_DIR"
 
+  CPWD=`pwd`
+  cd ${BASE_DIR}
+  FULL_BASE_DIR=`pwd`
+  cd ${CPWD}
   SCRIPT_DIR=${BASE_DIR}/scripts
   CNF_DIR=${BASE_DIR}/etc
   [ -z "${LOG_DIR}" ] && LOG_DIR="${BASE_DIR}/log"

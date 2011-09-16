@@ -1,1 +1,17 @@
-Minimalistic Benchmark Monitoring Tools
+NAME
+
+  monitor - Minimalistic Benchmark Monitoring Tools
+
+SYNOPSIS
+
+
+
+DESCRIPTION
+
+
+PRE REQUISITES
+
+  dstat
+
+  $ sudo apt-get install dstat
+  $ dstat --epoch --time --load 1 5
