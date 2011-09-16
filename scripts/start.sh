@@ -26,6 +26,7 @@ pre_processing() {
 
   [ -z `which dstat 2>/dev/null` ] && error "dstat not found in PATH"
   [ -z `which reqstat 2>/dev/null` ] && error "reqstat not found in PATH"
+  [ ! -f "${DEFAULT_CNF_FILE}" ] && error "Default config file not found '${DEFAULT_CNF_FILE}'"
 
   return 0
 }
@@ -38,16 +39,26 @@ process() {
   #local AMI="$1"
   #[ -z "${AMI}" ] && fatal "${FUNCTION} \$AMI is not defined"
 
-  local COUNT="10"
+  local COUNT="3600"
   local DELAY="1"
   local ID
 
   ID=`date +%Y%m%d.%H%M%S`
-  #gather_stats ${ID} ${DELAY} ${COUNT} 
+  mkdir -p ${LOG_DIR}/${ID}
+  gather_stats ${ID} ${DELAY} ${COUNT} 
   gather_config ${ID}
+  identify ${ID}
 
   return 0
 
+}
+
+identify() {
+  info "Monitoring output can be found in ${LOG_DIR}/${ID}"
+  warn "Be sure to add benchmark details to ${LOG_DIR}/${ID}/README"
+  echo "***Add details here ***" > ${LOG_DIR}/${ID}/README
+
+  return 0
 }
 
 gather_stats() {
@@ -63,16 +74,21 @@ gather_stats() {
 
   info "Starting Benchmark Monitoring ID:${ID} (${DELAY} ${COUNT})"
 
-  FILENAME=${LOG_DIR}/${ID}.${SHORT_HOSTNAME}.dstat${DATA_EXT}
+  FILENAME=${LOG_DIR}/${ID}/${ID}.${SHORT_HOSTNAME}.dstat${DATA_EXT}
   dstat --epoch --time --load --cpu --mem --swap --disk --net --proc --nocolor --noheaders --output ${FILENAME} ${DELAY} ${COUNT} > /dev/null &
   DSTAT_PID=$!
   info "Logging 'dstat' to ${FILENAME}, PID=${DSTAT_PID}"
  
-  FILENAME=${LOG_DIR}/${ID}.${SHORT_HOSTNAME}.reqstat${DATA_EXT}
+  FILENAME=${LOG_DIR}/${ID}/${ID}.${SHORT_HOSTNAME}.reqstat${DATA_EXT}
   reqstat ${DELAY} ${COUNT} > ${FILENAME} &
   REQSTAT_PID=$!
   info "Logging 'reqstat' to ${FILENAME}, PID=${REQSTAT_PID}"
 
+
+  (
+    echo "dstat:${DSTAT_PID}"
+    echo "reqstat:${REQSTAT_PID}"
+  ) > ${LOG_DIR}/${ID}/${SCRIPT_NAME}.pid
   return 0
 }
 
@@ -83,10 +99,8 @@ gather_config() {
   local ID="$1"
   [ -z "${ID}" ] && fatal "${FUNCTION} \$ID is not defined"
 
-  BACKUP_CNF_DIR=${TMP_DIR}/${SCRIPT_NAME}/${ID}
-
+  BACKUP_CNF_DIR=${TMP_DIR}/${SCRIPT_NAME}/${ID}/config
   info "Creating config copy at ${BACKUP_CNF_DIR}"
-
   mkdir -p ${BACKUP_CNF_DIR}
 
   info "Backing up configuration files"
@@ -96,10 +110,12 @@ gather_config() {
     cp -r ${LINE} ${BACKUP_CNF_DIR}
   done < ${DEFAULT_CNF_FILE}
 
-  FILENAME=${FULL_BASE_DIR}/log/${ID}.${SHORT_HOSTNAME}.tar.gz
+  FILENAME=${FULL_BASE_DIR}/log/${ID}/${ID}.${SHORT_HOSTNAME}.config.tar.gz
   info "Generating configuration backup ${FILENAME}"
+  CWD=`pwd`
   cd ${BACKUP_CNF_DIR}/..
-  tar cfz ${FILENAME} ${ID}
+  tar cfz ${FILENAME} .
+  cd ${CWD}
 
   return 0
 }
