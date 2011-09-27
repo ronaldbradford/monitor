@@ -3,6 +3,7 @@ set terminal png size 1000,400
 set output "reqstat.png"
 set title "#ID# reqstat on #HOSTNAME#"
 set xlabel "time"
+set yrange [0:250]
 set ylabel "count/(ms)"
 set timefmt x "%s"
 set xdata time
