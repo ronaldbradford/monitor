@@ -35,6 +35,7 @@ process() {
 
   sed -e "s/#ID#/${ID}/;" ${CNF_DIR}/${SCRIPT_NAME}.index.php.t > ${RUN_DIR}/index.php
 
+  [ ! -d "${BASE_DIR}/www" ] && mkdir ${BASE_DIR}/www  && warn "Created $BASE_DIR/www. Be sure to link to webserver, i.e. sudo ln -s ${FULL_BASE_DIR}/www /var/www/admin/monitor"
   [ ! -d "${BASE_DIR}/www/${ID}" ] && ln -s ${RUN_DIR} ${BASE_DIR}/www/${ID}
 
   info "Configuring files for graphing"
