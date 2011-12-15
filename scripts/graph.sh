@@ -10,7 +10,7 @@
 # Script Definition
 #
 SCRIPT_NAME=`basename $0 | sed -e "s/.sh$//"`
-SCRIPT_VERSION="0.10 DD-MMM-YYYY"
+SCRIPT_VERSION="0.10 16-SEP-2011"
 SCRIPT_REVISION=""
 
 #-------------------------------------------------------------------------------
@@ -35,7 +35,7 @@ process() {
 
   sed -e "s/#ID#/${ID}/;" ${CNF_DIR}/${SCRIPT_NAME}.index.php.t > ${RUN_DIR}/index.php
 
-  [ ! -d "${BASE_DIR}/www" ] && mkdir ${BASE_DIR}/www  && warn "Created $BASE_DIR/www. Be sure to link to webserver, i.e. sudo ln -s ${FULL_BASE_DIR}/www /var/www/admin/monitor"
+  [ ! -d "${BASE_DIR}/www" ] && mkdir ${BASE_DIR}/www  && warn "Created $BASE_DIR/www. Be sure to link to webserver, i.e. sudo mkdir -p /var/www/admin/; sudo ln -s ${FULL_BASE_DIR}/www /var/www/admin/monitor"
   [ ! -d "${BASE_DIR}/www/${ID}" ] && ln -s ${RUN_DIR} ${BASE_DIR}/www/${ID}
 
   info "Configuring files for graphing"
@@ -114,12 +114,18 @@ process_args() {
   return 0
 }
 
+pre_processing() {
+  [ -z `which gnuplot 2>/dev/null` ] && error "gunplot is required for this program"
+  return 0
+}
+
 #----------------------------------------------------------------------- main --
 # Main Script Processing
 #
 main () {
   [ ! -z "${TEST_FRAMEWORK}" ] && return 1
   bootstrap
+  pre_processing
   process_args $*
   commence
   process ${PARAM_ID}
