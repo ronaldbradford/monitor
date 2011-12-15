@@ -4,14 +4,53 @@ NAME
 
 SYNOPSIS
 
-
+  start.sh  - This will start the monitoring process (default for 3600 seconds, i.e. 1 hour)
+  stop.sh   - TBD
+  reset.sh  - This will reset PHP/Apache/Memcached/reqstat. Useful before starting monitoring.
+  graph.sh  - This will produce a HTML graphical output of data
 
 DESCRIPTION
 
 
+  start.sh will collect system configuration, and start dstat and reqstat monitoring for the defined period.  Each
+  new benchmark collection will be given a unique ID. This is used for graphing.
+
+  This scripts requires no auguments by default.
+
+  ./start.sh
+  20111215 17:16:14 +0000 INFO  [start] Script started (Version: 0.10 16-SEP-2011)
+  20111215 17:16:14 +0000 INFO  [start] Starting Benchmark Monitoring ID:20111215.171614 (1 3600)
+  20111215 17:16:14 +0000 INFO  [start] Logging 'dstat' to ../log/20111215.171614/20111215.171614.ip-10-195-30-255.dstat.csv, PID=25471
+  20111215 17:16:14 +0000 INFO  [start] Logging 'reqstat' to ../log/20111215.171614/20111215.171614.ip-10-195-30-255.reqstat.csv, PID=25473
+  20111215 17:16:14 +0000 INFO  [start] Creating config copy at /tmp/start/20111215.171614/config
+  20111215 17:16:14 +0000 INFO  [start] Backing up configuration files
+  20111215 17:16:14 +0000 INFO  [start] ../etc/apache2
+  20111215 17:16:14 +0000 INFO  [start] ../etc/mysql
+  20111215 17:16:14 +0000 INFO  [start] ../etc/memcached.conf
+  20111215 17:16:14 +0000 INFO  [start] ../usr/local/bin/php.fcgi
+  20111215 17:16:14 +0000 INFO  [start] Generating configuration backup /home/ubuntu/git/monitor/log/20111215.171614/20111215.171614.ip-10-195-30-255.config.tar.gz
+  20111215 17:16:14 +0000 INFO  [start] Monitoring output can be found in ../log/20111215.171614
+  20111215 17:16:14 +0000 WARN  [start] Be sure to add benchmark details to ../log/20111215.171614/README
+  20111215 17:16:14 +0000 INFO  [start] Script completed successfully (0 secs)
+  
+
+
 PRE REQUISITES
 
-  dstat
+  dstat - versatile tool for generating system resource statistics
 
-  $ sudo apt-get install dstat
+  # To install and test dstat on Ubuntu
+  $ sudo apt-get install -y dstat
   $ dstat --epoch --time --load 1 5
+
+  reqstat - Report Request Statistics
+
+  $ git clone http://github.com/ronaldbradford/reqstat
+
+  If graph.sh is run on the machine that is running the monitoring, gnuplot is also required.
+
+  gnuplut - an interactive plotting program
+
+  # To install on Ubuntu
+  $ sudo apt-get install -y gnuplot
+
