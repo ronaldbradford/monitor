@@ -13,7 +13,8 @@
 
 <h2>reqstat Output</h2>
 <a name="requests"></a>
-<img src="reqstat.png" />
+<img src="reqstat-rps.png" /><br />
+<img src="reqstat-per.png" />
 <p> <a href="reqstat.csv">CSV<a>, <a href="reqstat.tsv">TSV</a> </p>
 <h2>dstat Output</h2>
 <a name="load"></a>
