@@ -1,5 +1,5 @@
 #!/usr/bin/gnuplot
-set terminal png size 1000,300
+set terminal png size 1400,300
 set xlabel "time"
 set xdata time
 set format x "%M:%S"
