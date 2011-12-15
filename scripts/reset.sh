@@ -1,5 +1,6 @@
 #!/bin/sh
 
+BASE_DIR=${HOME}
 
 echo "Stopping services"
 sudo service mysql stop
@@ -11,5 +12,8 @@ sudo service mysql start
 sudo service apache2 start
 sudo service memcached start
 
-php /tmp/reqstat/support/reqstat_reset.php
-php /tmp/reqstat/support/reqstat_debug.php
+
+[ -f "${BASE_DIR}/git/reqstat/support/reqstat_reset.php" ] && php ${BASE_DIR}/git/reqstat/support/reqstat_reset.php
+[ -f "${BASE_DIR}/git/reqstat/support/reqstat_debug.php" ] && php ${BASE_DIR}/git/reqstat/support/reqstat_debug.php
+
+exit 0
