@@ -1,5 +1,6 @@
 <html>
 <head>
+<meta http-equiv="refresh" content="60" />
 <title>#ID# Results</title>
 </head>
 <body>
