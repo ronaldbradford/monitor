@@ -23,9 +23,21 @@ SCRIPT_REVISION=""
 
 
 pre_processing() {
+  local FUNCTION="pre_processing()"
+  debug "${FUNCTION} ($*)"
 
-  [ -z `which dstat 2>/dev/null` ] && error "dstat not found in PATH"
-  [ -z `which reqstat 2>/dev/null` ] && error "reqstat not found in PATH"
+  local SOURCES="$1"
+  [ -z "${SOURCES}" ] && fatal "${FUNCTION} \$SOURCES is not defined"
+
+  local RUN_DSTAT
+  local RUN_VMSTAT
+  local RUN_REQSTAT
+  RUN_DSTAT=`echo ${SOURCES} | grep dstat | wc -l`
+  RUN_VMSTAT=`echo ${SOURCES} | grep vmstat | wc -l`
+  RUN_REQSTAT=`echo ${SOURCES} | grep reqstat | wc -l`
+  [ ${RUN_DSTAT} -eq 1 -a -z `which dstat 2>/dev/null` ] && error "dstat not found in PATH"
+  [ ${RUN_VMSTAT} -eq 1 -a -z `which vmstat 2>/dev/null` ] && error "vmstat not found in PATH"
+  [ ${RUN_REQSTAT} -eq 1 -a -z `which reqstat 2>/dev/null` ] && error "reqstat not found in PATH"
   [ ! -f "${DEFAULT_CNF_FILE}" ] && error "Default config file not found '${DEFAULT_CNF_FILE}'"
 
   return 0
@@ -35,9 +47,9 @@ pre_processing() {
 process() {
   local FUNCTION="process()"
   debug "${FUNCTION} ($*)"
-  [ $# -ne 0 ] && fatal "${FUNCTION} This function requires no arguments."
-  #local AMI="$1"
-  #[ -z "${AMI}" ] && fatal "${FUNCTION} \$AMI is not defined"
+  [ $# -ne 1 ] && fatal "${FUNCTION} This function requires one argument."
+  local SOURCES="$1"
+  [ -z "${SOURCES}" ] && fatal "${FUNCTION} \$SOURCES is not defined"
 
   local COUNT="3600"
   local DELAY="1"
@@ -45,7 +57,7 @@ process() {
 
   ID=`date +%Y%m%d.%H%M%S`
   mkdir -p ${LOG_DIR}/${ID}
-  gather_stats ${ID} ${DELAY} ${COUNT} 
+  gather_stats ${ID} ${DELAY} ${COUNT} ${SOURCES}
   gather_config ${ID}
   identify ${ID}
 
@@ -64,30 +76,53 @@ identify() {
 gather_stats() {
   local FUNCTION="gather_stats()"
   debug "${FUNCTION} ($*)"
-  [ $# -ne 3 ] && fatal "${FUNCTION} This function requires three arguments."
+  [ $# -ne 4 ] && fatal "${FUNCTION} This function requires three arguments."
   local ID="$1"
   [ -z "${ID}" ] && fatal "${FUNCTION} \$ID is not defined"
   local DELAY="$2"
   [ -z "${DELAY}" ] && fatal "${FUNCTION} \$DELAY is not defined"
   local COUNT="$3"
   [ -z "${COUNT}" ] && fatal "${FUNCTION} \$COUNT is not defined"
+  local SOURCES="$4"
+  [ -z "${SOURCES}" ] && fatal "${FUNCTION} \$SOURCES is not defined"
 
   info "Starting Benchmark Monitoring ID:${ID} (${DELAY} ${COUNT})"
 
-  FILENAME=${LOG_DIR}/${ID}/${ID}.${SHORT_HOSTNAME}.dstat${DATA_EXT}
-  dstat --epoch --time --load --cpu --mem --swap --disk --net --proc --nocolor --noheaders --output ${FILENAME} ${DELAY} ${COUNT} > /dev/null &
-  DSTAT_PID=$!
-  info "Logging 'dstat' to ${FILENAME}, PID=${DSTAT_PID}"
- 
-  FILENAME=${LOG_DIR}/${ID}/${ID}.${SHORT_HOSTNAME}.reqstat${DATA_EXT}
-  reqstat ${DELAY} ${COUNT} > ${FILENAME} &
-  REQSTAT_PID=$!
-  info "Logging 'reqstat' to ${FILENAME}, PID=${REQSTAT_PID}"
+  local RUN_DSTAT
+  local RUN_VMSTAT
+  local RUN_REQSTAT
+  RUN_DSTAT=`echo ${SOURCES} | grep dstat | wc -l`
+  RUN_VMSTAT=`echo ${SOURCES} | grep vmstat | wc -l`
+  RUN_REQSTAT=`echo ${SOURCES} | grep reqstat | wc -l`
 
+  if [ ${RUN_DSTAT} -eq 1 ] 
+  then
+    local FILENAME=${LOG_DIR}/${ID}/${ID}.${SHORT_HOSTNAME}.dstat${DATA_EXT}
+    dstat --epoch --time --load --cpu --mem --swap --disk --net --proc --nocolor --noheaders --output ${FILENAME} ${DELAY} ${COUNT} > /dev/null &
+    local DSTAT_PID=$!
+    info "Logging 'dstat' to ${FILENAME}, PID=${DSTAT_PID}"
+  fi
+ 
+  if [ ${RUN_REQSTAT} -eq 1 ] 
+  then
+    local FILENAME=${LOG_DIR}/${ID}/${ID}.${SHORT_HOSTNAME}.reqstat${DATA_EXT}
+    reqstat ${DELAY} ${COUNT} > ${FILENAME} &
+    local REQSTAT_PID=$!
+    info "Logging 'reqstat' to ${FILENAME}, PID=${REQSTAT_PID}"
+  fi
+
+  if [ ${RUN_VMSTAT} -eq 1 ] 
+  then
+    local FILENAME=${LOG_DIR}/${ID}/${ID}.${SHORT_HOSTNAME}.vmstat${DATA_EXT}
+    vmstat -n ${DELAY} ${COUNT} > ${FILENAME} &
+    local VMSTAT_PID=$!
+    info "Logging 'vmstat' to ${FILENAME}, PID=${VMSTAT_PID}"
+  fi
 
   (
     echo "dstat:${DSTAT_PID}"
     echo "reqstat:${REQSTAT_PID}"
+    echo "vmstat:${VMSTAT_PID}"
   ) > ${LOG_DIR}/${ID}/${SCRIPT_NAME}.pid
   return 0
 }
@@ -138,10 +173,10 @@ bootstrap() {
 #
 help() {
   echo ""
-  echo "Usage: ${SCRIPT_NAME}.sh -X <example-string> [ -q | -v | --help | --version ]"
+  echo "Usage: ${SCRIPT_NAME}.sh -s <sources> [ -q | -v | --help | --version ]"
   echo ""
   echo "  Required:"
-  echo "    -X         Example mandatory parameter"
+  echo "    -s         Monitoring Sources (currently dstat:vmstat:reqstat)"
   echo ""
   echo "  Optional:"
   echo "    -q         Quiet Mode"
@@ -161,17 +196,17 @@ help() {
 process_args() {
   check_for_long_args $*
   debug "Processing supplied arguments '$*'"
-  while getopts X:qv OPTION
+  while getopts s:qv OPTION
   do
     case "$OPTION" in
-      X)  EXAMPLE_ARG=${OPTARG};;
+      s)  PARAM_OPTIONS=${OPTARG};;
       q)  QUIET="Y";; 
       v)  USE_DEBUG="Y";; 
     esac
   done
   shift `expr ${OPTIND} - 1`
 
-  #[ -z "${EXAMPLE_ARG}" ] && error "You must specify a sample value for -X. See --help for full instructions."
+  [ -z "${PARAM_OPTIONS}" ] && error "You must specify a the monitoring sources with -s. See --help for full instructions."
 
   return 0
 }
@@ -182,10 +217,10 @@ process_args() {
 main () {
   [ ! -z "${TEST_FRAMEWORK}" ] && return 1
   bootstrap
-  pre_processing
   process_args $*
+  pre_processing ${PARAM_OPTIONS}
   commence
-  process
+  process ${PARAM_OPTIONS}
   complete
 
   return 0
