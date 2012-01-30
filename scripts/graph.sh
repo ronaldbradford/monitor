@@ -38,17 +38,25 @@ process() {
   [ ! -d "${BASE_DIR}/www" ] && mkdir ${BASE_DIR}/www  && warn "Created $BASE_DIR/www. Be sure to link to webserver, i.e. sudo mkdir -p /var/www/admin/; sudo ln -s ${FULL_BASE_DIR}/www /var/www/admin/monitor"
   [ ! -d "${BASE_DIR}/www/${ID}" ] && ln -s ${RUN_DIR} ${BASE_DIR}/www/${ID}
 
+  chmod +x *.gp
+
   info "Configuring files for graphing"
   cd ${RUN_DIR}
-  cp ${ID}.*.reqstat.csv reqstat.csv
-  cp ${ID}.*.dstat.csv dstat.csv
-  sed -e "s/,/\\t/g;s/^epoch/#epoch/" reqstat.csv > reqstat.tsv
-  sed -e "s/,/\\t/g;s/^\"/#\"/;/^$/d" dstat.csv > dstat.tsv
+  if [ `ls ${ID}.*.reqstat.csv 2>/dev/null| wc -l` -eq 1 ]
+  then
+    cp ${ID}.*.reqstat.csv reqstat.csv
+    sed -e "s/,/\\t/g;s/^epoch/#epoch/" reqstat.csv > reqstat.tsv
+    info "Graphing reqstat output"
+    ./reqstat.gp
+  fi
 
-  chmod +x *.gp
-  info "Graphing output"
-  ./dstat.gp
-  ./reqstat.gp
+  if [ `ls ${ID}.*.dstat.csv 2>/dev/null| wc -l` -eq 1 ]
+  then
+    cp ${ID}.*.dstat.csv dstat.csv
+    sed -e "s/,/\\t/g;s/^\"/#\"/;/^$/d" dstat.csv > dstat.tsv
+    info "Graphing dstat output"
+    ./dstat.gp
+  fi
 
   return 0
 }
